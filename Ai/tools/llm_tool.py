@@ -7,6 +7,13 @@ client=OpenAI(
  
 )
 
-def call_llm(system_promt,messege){
-  
-}
+
+def call_llm(system_prompt, messages):
+    response = client.chat.completions.create(
+        model="gemini-3-flash-preview",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            *messages
+        ]
+    )
+    return response.choices[0].message.content.strip()
