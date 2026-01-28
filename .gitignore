@@ -1,0 +1,123 @@
+# =====================================
+# GLOBAL / OS
+# =====================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =====================================
+# ENV / SECRETS (CRITICAL)
+# =====================================
+.env
+.env.*
+*.env
+secrets/
+*.key
+*.pem
+*.crt
+
+# =====================================
+# PYTHON / AI
+# =====================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Python build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Python tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# AI / ML Models & Weights
+models/
+checkpoints/
+*.h5
+*.pt
+*.pth
+*.onnx
+
+# =====================================
+# NODE.JS / BACKEND
+# =====================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Backend build output
+dist/
+build/
+
+# Node cache
+.cache/
+.npm/
+.pnpm-store/
+
+# =====================================
+# REACT / FRONTEND
+# =====================================
+# Production builds
+build/
+dist/
+
+# React / Vite / Next / CRA
+.vite/
+.next/
+out/
+.vercel/
+
+# React cache
+.eslintcache
+
+# =====================================
+# DATABASE / LOCAL DATA
+# =====================================
+*.sqlite
+*.sqlite3
+*.db
+data/
+dump/
+
+# =====================================
+# LOGS
+# =====================================
+logs/
+*.log
+
+# =====================================
+# IDEs / EDITORS
+# =====================================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =====================================
+# TEMP / BACKUPS
+# =====================================
+*.tmp
+*.bak
+*.old
+*.backup
+AUTH_FIX_SUMMARY.md
+
+# =====================================
+# MISC
+# =====================================
+coverage/
