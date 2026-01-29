@@ -33,8 +33,8 @@ function Newsidebar() {
   }
   const menuItems = [
     { id: 'plan', icon: Navigation, label: 'Plan Trip', path: "/PlanTrip", color: 'from-blue-500 to-cyan-500' },
-    { id: 'places', icon: MapPin, label: 'Nearby Places', path: "/nearplace", color: 'from-purple-500 to-pink-500' },
-    { id: 'route', icon: Zap, label: 'Route & Distance', path: "/route", color: 'from-orange-500 to-red-500' },
+    { id: 'places', icon: MapPin, label: 'Nearby Places', path: "/RouteDistancePage", color: 'from-purple-500 to-pink-500' },
+    { id: 'route', icon: Zap, label: 'Route & Distance', path: "/RouteDistancePage", color: 'from-orange-500 to-red-500' },
     { id: 'expense', icon: CreditCard, label: 'Expense Split', path: "/expencive", color: 'from-green-500 to-emerald-500' },
     { id: 'summary', icon: BarChart3, label: 'Trip Summary', path: "/summery", color: 'from-indigo-500 to-blue-500' },
   ]
@@ -46,11 +46,9 @@ function Newsidebar() {
 
 
   return (
-    <div>
-      <SidebarProvider>
-        <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-          {/* Sidebar */}
-          <Sidebar className="border-r border-slate-200 shadow-lg">
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Sidebar */}
+      <Sidebar className="border-r border-slate-200 shadow-lg">
             {/* Header */}
             <SidebarHeader className="border-b border-slate-200 bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
               <div className="flex flex-col gap-1 py-2">
@@ -125,16 +123,12 @@ function Newsidebar() {
                 <Settings className="h-4   w-4" />
               </button>
             </SidebarFooter>
-          </Sidebar>
+      </Sidebar>
 
-          <div className='text-black'>
+      <div className='text-black'>
+        <SidebarTrigger />
+      </div>
 
-
-            <SidebarTrigger />
-          </div>
-
-        </div>
-      </SidebarProvider>
     </div>
   )
 }

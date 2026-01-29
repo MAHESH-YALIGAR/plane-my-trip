@@ -9,7 +9,7 @@ const path = require("path");
 // const cron = require("node-cron");
 const tripplanerouter=require("./routes/tripplane.routes")
 const authentication=require("./routes/Authentication.routes")
-
+const routerouter=require("./routes/router.routes")
 
 dotenv.config();
 
@@ -39,6 +39,7 @@ app.use(cors({
 //✔️✅‼️ routing hear ..........
 app.use("/api/auth",authentication)
 app.use("/api/plane",tripplanerouter)
+app.use("/api/rout",routerouter)
 // ✅ Server listening
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`🌍 Server running at http://localhost:${PORT}`));

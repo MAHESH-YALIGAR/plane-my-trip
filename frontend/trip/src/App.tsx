@@ -6,6 +6,7 @@ import PlanTrip from "./pages/PlanTrip";
 import ProtectedRoute from "./context/Protected";
 import ProtectedLayout from "./context/ProtectedLayout";
 import Dashboard from "./pages/Dashboard"
+import RouteDistancePage from "./pages/RouteDistancePage"
 function App() {
   return (
     <Router>
@@ -21,6 +22,7 @@ function App() {
           <Route element={<ProtectedLayout />}>
             <Route path="/PlanTrip" element={<PlanTrip />} />
             <Route path="/Dashboard" element={<Dashboard/>}/>
+            <Route path="/RouteDistancePage" element={<RouteDistancePage/>}/>
           </Route>
         </Route>
       </Routes>

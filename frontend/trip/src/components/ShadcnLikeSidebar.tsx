@@ -23,7 +23,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-function useSidebar() {
+export function useSidebar() {
   const context = useContext(SidebarContext)
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider")
@@ -38,13 +38,12 @@ function useSidebar() {
 export function Sidebar({ children, className }: { children: React.ReactNode; className?: string }) {
   const { open } = useSidebar()
 
+  const base = "h-screen transition-all duration-300 overflow-hidden flex-shrink-0"
+  const openClasses = "w-64 md:w-92 bg-background border-r"
+  const closedClasses = "w-0 bg-transparent border-0"
+
   return (
-    <aside
-      className={`
-        h-screen border-r bg-background transition-all duration-300 overflow-hidden
-        ${open ? "w-64 md:w-92" : "w-0"} ${className ?? ''}
-      `}
-    >
+    <aside className={`${base} ${open ? openClasses : closedClasses} ${className ?? ''}`}>
       {children}
     </aside>
   )
