@@ -5,8 +5,10 @@ import LoginPage from "./pages/authentication";
 import PlanTrip from "./pages/PlanTrip";
 import ProtectedRoute from "./context/Protected";
 import ProtectedLayout from "./context/ProtectedLayout";
-import Dashboard from "./pages/Dashboard"
-import RouteDistancePage from "./pages/RouteDistancePage"
+import Dashboard from "./pages/Dashboard";
+import RouteDistancePage from "./pages/RouteDistancePage";
+import NearbyPlaces   from "./pages/NearbyPlaces";
+import RoutePlanner from "./pages/RoutePlanner";
 function App() {
   return (
     <Router>
@@ -23,6 +25,8 @@ function App() {
             <Route path="/PlanTrip" element={<PlanTrip />} />
             <Route path="/Dashboard" element={<Dashboard/>}/>
             <Route path="/RouteDistancePage" element={<RouteDistancePage/>}/>
+            <Route path="/NearbyPlaces" element={<NearbyPlaces/>}/>
+            <Route path="/RoutePlanner" element={<RoutePlanner/>}/>
           </Route>
         </Route>
       </Routes>

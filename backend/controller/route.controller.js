@@ -1,38 +1,31 @@
 const axios = require("axios");
 
 /* -----------------------------------
-1. Convert place name → lat/lng
-(OpenStreetMap Nominatim)
+1. Geocode place name → lat/lng
 ----------------------------------- */
 const geocodePlace = async (place) => {
-  const url = "https://nominatim.openstreetmap.org/search";
+  const response = await axios.get(
+    "https://nominatim.openstreetmap.org/search",
+    {
+      params: { q: place, format: "json", limit: 1 },
+      headers: { "User-Agent": "plane-my-trip-app" },
+    }
+  );
 
-  const response = await axios.get(url, {
-    params: {
-      q: place,
-      format: "json",
-      limit: 1,
-    },
-    headers: {
-      "User-Agent": "plane-my-trip-app", // REQUIRED by OSM
-    },
-  });
-
-  if (!response.data.length) {
-    throw new Error("Place not found");
-  }
+  if (!response.data.length) throw new Error("Place not found");
 
   return {
     lat: parseFloat(response.data[0].lat),
     lng: parseFloat(response.data[0].lon),
+    display_name: response.data[0].display_name,
   };
 };
 
 /* -----------------------------------
-2. Distance calculation (Haversine)
+2. Distance calculation
 ----------------------------------- */
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // KM
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
@@ -42,23 +35,23 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLon / 2) ** 2;
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Number((R * c).toFixed(2));
+  return Number((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(2));
 };
 
 /* -----------------------------------
-3. Find nearby places (20 KM)
-(OpenStreetMap Overpass)
+3. Nearby places (categorized)
 ----------------------------------- */
 const findNearbyPlaces = async (lat, lng) => {
   const query = `
-    [out:json];
-    (
-      node["tourism"](around:20000,${lat},${lng});
-      node["amenity"="restaurant"](around:20000,${lat},${lng});
-      node["amenity"="cafe"](around:20000,${lat},${lng});
-    );
-    out body;
+  [out:json];
+  (
+    node["amenity"="restaurant"](around:20000,${lat},${lng});
+    node["tourism"="attraction"](around:20000,${lat},${lng});
+    node["leisure"="park"](around:20000,${lat},${lng});
+    node["natural"="waterfall"](around:20000,${lat},${lng});
+    node["waterway"="waterfall"](around:20000,${lat},${lng});
+  );
+  out body;
   `;
 
   const response = await axios.post(
@@ -67,57 +60,59 @@ const findNearbyPlaces = async (lat, lng) => {
     { headers: { "Content-Type": "text/plain" } }
   );
 
-  return response.data.elements.map((place) => ({
-    name: place.tags?.name || "Unnamed place",
-    lat: place.lat,
-    lng: place.lon,
-    type: place.tags?.tourism || place.tags?.amenity || "place",
-  }));
+  return response.data.elements.map((p) => {
+    let category = "other";
+
+    if (p.tags?.amenity === "restaurant") category = "restaurant";
+    else if (p.tags?.tourism === "attraction") category = "tourism";
+    else if (p.tags?.leisure === "park") category = "park";
+    else if (
+      p.tags?.natural === "waterfall" ||
+      p.tags?.waterway === "waterfall"
+    )
+      category = "waterfall";
+
+    return {
+      name: p.tags?.name || "Unnamed place",
+      lat: p.lat,
+      lng: p.lon,
+      category,
+    };
+  });
 };
 
 /* -----------------------------------
-4. API: User enters only place name
+4. API Controller
 ----------------------------------- */
 module.exports.nearest = async (req, res) => {
-  console.log("you are in the route console")
   try {
     const { placeName } = req.body;
-
-    if (!placeName) {
+    if (!placeName)
       return res.status(400).json({ error: "Place name required" });
-    }
 
-    // Step 1: Get user location
-    const userLocation = await geocodePlace(placeName);
-    console.log("present location",userLocation)
-    // Step 2: Find nearby places
-    const nearbyPlaces = await findNearbyPlaces(
-      userLocation.lat,
-      userLocation.lng
-    );
-    console.log("user near",nearbyPlaces)
+    const origin = await geocodePlace(placeName);
+    const nearby = await findNearbyPlaces(origin.lat, origin.lng);
 
-    // Step 3: Add distance
-    const placesWithDistance = nearbyPlaces.map((place) => ({
-      ...place,
-      distance_km: calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        place.lat,
-        place.lng
-      ),
-    }));
+    const results = nearby
+      .map((place) => ({
+        ...place,
+        distance_km: calculateDistance(
+          origin.lat,
+          origin.lng,
+          place.lat,
+          place.lng
+        ),
+        map_link: `https://www.google.com/maps?q=${place.lat},${place.lng}`,
+        route_link: `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${place.lat},${place.lng}`,
+      }))
+      .sort((a, b) => a.distance_km - b.distance_km);
 
-    // Step 4: Sort by nearest
-    placesWithDistance.sort((a, b) => a.distance_km - b.distance_km);
-
-   const results= res.json({
-      origin: userLocation,
-      results: placesWithDistance,
+    res.json({
+      origin,
+      categories: ["restaurant", "tourism", "park", "waterfall"],
+      results,
     });
-    console.log("the final result",results.data)
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
