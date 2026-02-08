@@ -33,7 +33,7 @@ function Newsidebar() {
   }
   const menuItems = [
     { id: 'plan', icon: Navigation, label: 'Plan Trip', path: "/PlanTrip", color: 'from-blue-500 to-cyan-500' },
-    { id: 'places', icon: MapPin, label: 'Nearby Places', path: "/NearbyPlaces", color: 'from-purple-500 to-pink-500' },
+    { id: 'places', icon: MapPin, label: 'My Trips', path: "/MyTrips", color: 'from-purple-500 to-pink-500' },
     { id: 'route', icon: Zap, label: 'Route & Distance', path: "/RoutePlanner", color: 'from-orange-500 to-red-500' },
     { id: 'expense', icon: CreditCard, label: 'Expense Split', path: "/expencive", color: 'from-green-500 to-emerald-500' },
     { id: 'summary', icon: BarChart3, label: 'Trip Summary', path: "/summery", color: 'from-indigo-500 to-blue-500' },

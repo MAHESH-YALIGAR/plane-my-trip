@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import RouteDistancePage from "./pages/RouteDistancePage";
 import NearbyPlaces   from "./pages/NearbyPlaces";
 import RoutePlanner from "./pages/RoutePlanner";
+import MyTrips from "./pages/MyTrips.tsx";
+import FullRouteView from "./pages/FullRouteView.tsx"
 function App() {
   return (
     <Router>
@@ -25,8 +27,11 @@ function App() {
             <Route path="/PlanTrip" element={<PlanTrip />} />
             <Route path="/Dashboard" element={<Dashboard/>}/>
             <Route path="/RouteDistancePage" element={<RouteDistancePage/>}/>
-            <Route path="/NearbyPlaces" element={<NearbyPlaces/>}/>
-            <Route path="/RoutePlanner" element={<RoutePlanner/>}/>
+            <Route path="/trip/:id" element={<NearbyPlaces/>}/>
+            <Route path="/:id/RoutePlanner" element={<RoutePlanner/>}/>
+            <Route path="/MyTrips" element={<MyTrips/>}/>
+            <Route path="/:id/FullRouteView" element={<FullRouteView/>}/>
+
           </Route>
         </Route>
       </Routes>

@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { api } from "@/services/api";
 import { useRouteStore } from "@/store/routeStore";
+import { useParams } from "react-router";
 import {
   Search,
   MapPin,
@@ -12,7 +13,10 @@ import {
   List,
   X,
   Loader2,
+  Check,
+  Trash2,
 } from "lucide-react";
+import { useNavigate } from "react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +76,9 @@ const PLACE_CATEGORIES = {
 };
 
 export default function PlaceDiscovery() {
+  const navigate=useNavigate()
+  let params = useParams();
+  const id=params.id;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -80,8 +87,18 @@ export default function PlaceDiscovery() {
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [error, setError] = useState("");
+  const [addedPlaceIds, setAddedPlaceIds] = useState<Set<string>>(new Set());
 
-  const addPlace = useRouteStore((s) => s.addPlace);
+  const { addPlace, removePlace, places, setTripId } = useRouteStore();
+
+  // Set tripId from URL params when component mounts
+  useEffect(() => {
+    if (params.tripId) {
+      setTripId(params.tripId);
+    }
+    // console.log("id near by", params.tripId)
+    // console.log("id near by", setTripId)
+  }, [params.tripId, setTripId]);
 
   // Generate Google Maps URL
   const generateMapUrl = (place: any): string => {
@@ -94,6 +111,16 @@ export default function PlaceDiscovery() {
     }
     const query = encodeURIComponent(`${place.name}, ${place.address || ""}`);
     return `https://www.google.com/maps/search/${query}`;
+  };
+
+  // Check if a place is already added to route
+  const isPlaceAdded = (place: any): boolean => {
+    return places.some(
+      (p) =>
+        p.name.toLowerCase() === place.name.toLowerCase() &&
+        p.lat === place.latitude &&
+        p.lng === place.longitude
+    );
   };
 
   // Fetch places
@@ -116,9 +143,19 @@ export default function PlaceDiscovery() {
         map_url: generateMapUrl(place),
         // Use backend category, fallback to 'tourism' if not provided
         category: place.category?.toLowerCase() || "tourism",
+        // Create unique ID for tracking
+        placeId: `${place.name}-${place.latitude || place.lat}-${place.longitude || place.lng}`,
       }));
 
       setAllResults(places);
+      // Update added places tracking based on route store
+      const newAddedIds = new Set<string>();
+      places.forEach((place: any) => {
+        if (isPlaceAdded(place)) {
+          newAddedIds.add(place.placeId);
+        }
+      });
+      setAddedPlaceIds(newAddedIds);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to search places");
       console.error("Error:", err);
@@ -185,6 +222,34 @@ export default function PlaceDiscovery() {
       PLACE_CATEGORIES[category as keyof typeof PLACE_CATEGORIES] ||
       PLACE_CATEGORIES.tourism
     );
+  };
+
+  // Handle add place to route
+  const handleAddPlace = (place: any) => {
+    const placeData = {
+      id: place.placeId,
+      name: place.name,
+      category: place.category,
+      lat: place.latitude || place.lat,
+      lng: place.longitude || place.lng,
+      address: place.address,
+      rating: place.rating,
+      distance_km: place.distance_km,
+      map_url: place.map_url,
+    };
+
+    addPlace(placeData);
+    setAddedPlaceIds((prev) => new Set([...prev, place.placeId]));
+  };
+
+  // Handle remove place from route
+  const handleRemovePlace = (placeId: string) => {
+    removePlace(placeId);
+    setAddedPlaceIds((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(placeId);
+      return newSet;
+    });
   };
 
   return (
@@ -280,6 +345,15 @@ export default function PlaceDiscovery() {
                   </Button>
                 );
               })}
+
+              <Button
+                onClick={() => navigate(`/${id}/RoutePlanner`)}
+                className="ml-20 gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg hover:scale-105 transition-transform"
+              >
+                <MapPin className="w-5 h-5" />
+                Show Route Map
+              </Button>
+
             </div>
 
             {selectedCategories.length > 0 && (
@@ -291,7 +365,9 @@ export default function PlaceDiscovery() {
               >
                 Clear all filters
               </Button>
+
             )}
+
           </div>
         )}
 
@@ -300,6 +376,11 @@ export default function PlaceDiscovery() {
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div className="text-sm font-medium">
               {filteredResults.length} place{filteredResults.length !== 1 ? "s" : ""} found
+              {addedPlaceIds.size > 0 && (
+                <span className="text-blue-600 ml-2">
+                  • {addedPlaceIds.size} added
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -359,7 +440,9 @@ export default function PlaceDiscovery() {
                           key={i}
                           place={place}
                           config={config}
-                          onAdd={() => addPlace(place)}
+                          isAdded={addedPlaceIds.has(place.placeId)}
+                          onAdd={() => handleAddPlace(place)}
+                          onRemove={() => handleRemovePlace(place.placeId)}
                         />
                       ))}
                     </div>
@@ -374,7 +457,9 @@ export default function PlaceDiscovery() {
                     key={i}
                     place={place}
                     config={getCategoryConfig(place.category)}
-                    onAdd={() => addPlace(place)}
+                    isAdded={addedPlaceIds.has(place.placeId)}
+                    onAdd={() => handleAddPlace(place)}
+                    onRemove={() => handleRemovePlace(place.placeId)}
                   />
                 ))}
               </div>
@@ -402,27 +487,41 @@ export default function PlaceDiscovery() {
   );
 }
 
-// Place Card Component
+// Place Card Component with add/remove/added states
 function PlaceCard({
   place,
   config,
+  isAdded,
   onAdd,
+  onRemove,
 }: {
   place: any;
   config: any;
+  isAdded: boolean;
   onAdd: () => void;
+  onRemove: () => void;
 }) {
   return (
-    <Card className={`overflow-hidden transition-all hover:shadow-md ${config.borderColor} border-2`}>
+    <Card
+      className={`overflow-hidden transition-all hover:shadow-md ${config.borderColor} border-2 ${isAdded ? "bg-blue-50 dark:bg-blue-950" : ""
+        }`}
+    >
       {/* Header with background color */}
-      <div className={`${config.bgColor} p-4 border-b`}>
+      <div className={`${config.bgColor} p-4 border-b relative`}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
             <h3 className="font-semibold text-base leading-tight line-clamp-2">
               {place.name}
             </h3>
           </div>
-          <span className="text-2xl flex-shrink-0">{config.icon}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl flex-shrink-0">{config.icon}</span>
+            {isAdded && (
+              <div className="bg-green-500 rounded-full p-1">
+                <Check className="w-4 h-4 text-white" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -458,6 +557,15 @@ function PlaceCard({
               {place.category}
             </Badge>
           </div>
+
+          {/* Added status */}
+          {isAdded && (
+            <div className="pt-1">
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                ✓ Added to Route
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -474,35 +582,61 @@ function PlaceCard({
             Map
           </Button>
 
-          <Button
-            size="sm"
-            className="flex-1 gap-2"
-            onClick={onAdd}
-          >
-            <Plus className="w-4 h-4" />
-            Add
-          </Button>
+          {isAdded ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              className="flex-1 gap-2"
+              onClick={onRemove}
+            >
+              <Trash2 className="w-4 h-4" />
+              Remove
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700"
+              onClick={onAdd}
+            >
+              <Plus className="w-4 h-4" />
+              Add
+            </Button>
+          )}
         </div>
       </div>
     </Card>
   );
 }
 
-// Place List Item Component
+// Place List Item Component with add/remove/added states
 function PlaceListItem({
   place,
   config,
+  isAdded,
   onAdd,
+  onRemove,
 }: {
   place: any;
   config: any;
+  isAdded: boolean;
   onAdd: () => void;
+  onRemove: () => void;
 }) {
   return (
-    <Card className={`p-4 transition-all hover:shadow-md ${config.borderColor} border-2`}>
+    <Card
+      className={`p-4 transition-all hover:shadow-md ${config.borderColor} border-2 ${isAdded ? "bg-blue-50 dark:bg-blue-950" : ""
+        }`}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex gap-3 flex-1 min-w-0">
-          <div className="text-2xl flex-shrink-0">{config.icon}</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="text-2xl flex-shrink-0">{config.icon}</div>
+            {isAdded && (
+              <div className="bg-green-500 rounded-full p-1">
+                <Check className="w-4 h-4 text-white" />
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold leading-tight">{place.name}</h3>
             {place.address && (
@@ -524,6 +658,11 @@ function PlaceListItem({
               <Badge className={config.badgeColor} variant="secondary">
                 {place.category}
               </Badge>
+              {isAdded && (
+                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                  ✓ Added
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -538,12 +677,23 @@ function PlaceListItem({
           >
             Map
           </Button>
-          <Button
-            size="sm"
-            onClick={onAdd}
-          >
-            Add
-          </Button>
+          {isAdded ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={onRemove}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={onAdd}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </Card>
